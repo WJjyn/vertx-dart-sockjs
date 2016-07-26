@@ -2,7 +2,7 @@ name: vertx_dart_sockjs
 description: Dart SockJS and Vert.x eventbus JS integration based on SockJS
 version: 0.3.4
 author: Michel Werren michel.werren@source-motion.ch
-homepage: https://source-motion.ch
+homepage: https://github.com/wem/vertx-dart-sockjs
 
 environment:
   sdk: '>=1.0.0 <2.0.0'
