@@ -45,7 +45,7 @@ public class SockJSEventBusBridgeTest extends AbstractClientServerTest
     @Before
     public void setUp () throws Exception
     {
-        prepareClientsideTest();
+        prepareClientsideTest("event-bus");
 
         vertx = serverRule.vertx();
         httpServer = vertx.createHttpServer( new HttpServerOptions().setHost( "localhost" ).setPort( 9000 ) );

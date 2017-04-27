@@ -34,7 +34,7 @@ abstract class AbstractClientServerTest
      *
      * @throws IOException
      */
-    void prepareClientsideTest () throws IOException
+    void prepareClientsideTest (String testName) throws IOException
     {
         try ( InputStream is = getClass().getResourceAsStream( "/test-config.properties" ) )
         {
@@ -44,8 +44,8 @@ abstract class AbstractClientServerTest
 
         workDirPath = Paths.get( config.getProperty( WORK_DIR_CONFIG_KEY ) );
 
-        stdout = Paths.get( config.getProperty( WORK_DIR_CONFIG_KEY ) + "/target/dart-stdout.txt" );
-        errout = Paths.get( config.getProperty( WORK_DIR_CONFIG_KEY ) + "/target/dart-err.txt" );
+        stdout = Paths.get( config.getProperty( WORK_DIR_CONFIG_KEY ) + "/target/" + testName + "-stdout.txt" );
+        errout = Paths.get( config.getProperty( WORK_DIR_CONFIG_KEY ) + "/target/" + testName + "-error.txt" );
 
         if ( Files.exists( stdout ) )
         {

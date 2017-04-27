@@ -1,83 +1,79 @@
-library ch.sourcemotion.sockjs;
-
 import 'dart:async';
 import 'dart:js';
-
 import 'package:logging/logging.dart';
-
 import 'src/sockjs_impl.dart';
 
-final Logger _logger = new Logger("SockJS");
+export 'src/sockjs_impl.dart' show SockJSOptions;
 
-/**
- * Callback when the SockJS connection is established
- */
+final Logger _log = new Logger("SockJS");
+
+/// Callback when the SockJS connection is established
 typedef void OnOpenCallback(SockJsOpenEvent event);
 
-/**
- * Callback when the SockJS connection got lost
- */
+/// Callback when the SockJS connection got lost
 typedef void OnCloseCallback(SockJsCloseEvent event);
 
-/**
- * Callback when received a message through SockJS
- */
+/// Callback when received a message through SockJS
 typedef void OnMessageCallback(SockJsMessageEvent event);
 
-/**
- * State of the SockJS connection
- */
+/// State of the SockJS connection
 enum SockJSConnectionState { CONNECTING, OPEN, CLOSING, CLOSED }
 
-/**
- * Please use this class instead of [SockJSImpl]
- */
+/// Typesafe facet [SockJSImpl]
 class SockJS {
   SockJSImpl _sockJS;
 
-  SockJS(String url) {
-    _sockJS = new SockJSImpl(url);
+  SockJS(String url, [SockJSOptions options]) {
+    _sockJS = new SockJSImpl(url, null, options);
   }
 
-  /**
-     * Starts a new [SockJS] instance.
-     *
-     * @return [Future] which will be called when the socket becomes ready.
-     */
-  static Future<SockJS> create(String url) {
+  /// Starts a new [SockJS] instance.
+  /// Returns [Future] which will be called when SockJS becomes ready.
+  static Future<SockJS> create(String url, [SockJSOptions options]) {
     Completer<SockJS> out = new Completer();
 
-    SockJS socket = new SockJS(url);
+    SockJS socket = new SockJS(url, options);
     socket.onOpen((SockJsOpenEvent event) {
+      _log.finest("Connected to ${url}");
       out.complete(socket);
     });
     return out.future;
   }
 
-  /**
-     * Set callback that will be called when the socket becomes open.
-     */
+  /// Set callback that will be called when SockJS becomes open.
   void onOpen(OnOpenCallback callback) {
-    _sockJS.onopen = new JsFunction.withThis(new _OnOpenCallbackCaller(callback));
+    _sockJS.onopen = allowInterop(((SimpleEventImpl event) {
+      if ("open" == event.type) {
+        callback(SockJsOpenEvent._instance);
+      } else {
+        _log.warning("Expect open event, but was '${event.type}'");
+      }
+    }));
   }
 
-  /**
-     * Set callback that will be called when a message was received on the socket.
-     */
+  /// Set callback that will be called when a message was received over SockJS.
   void onMessage(OnMessageCallback callback) {
-    _sockJS.onmessage = new JsFunction.withThis(new _OnMessageCallbackCaller(callback));
+    _sockJS.onmessage = allowInterop((SimpleEventImpl event) {
+      if ("message" == event.type) {
+        callback(new SockJsMessageEvent._(event.data));
+      } else {
+        _log.warning("Expect message event, but was '${event.type}'");
+      }
+    });
   }
 
-  /**
-     * Set callback that will be called when the socket get closed.
-     */
+  /// Set callback that will be called when SockJS get closed.
   void onClose(OnCloseCallback callback) {
-    _sockJS.onclose = new JsFunction.withThis(new _OnCloseCallbackCaller(callback));
+    _sockJS.onclose = allowInterop((SimpleEventImpl event) {
+      if ("close" == event.type) {
+        callback(SockJsCloseEvent._instance);
+      } else {
+        _log.warning("Expect close event, but was '${event.type}'");
+      }
+    });
   }
 
-  /**
-     * Send given text over the socket.
-     */
+  /// Send given text over SockJS.
   void sendData(String data) {
     _sockJS.send(data);
   }
@@ -90,66 +86,28 @@ class SockJS {
   }
 }
 
-class _OnMessageCallbackCaller {
-  final OnMessageCallback realDartMethod;
-
-  _OnMessageCallbackCaller(this.realDartMethod);
-
-  void call(JsObject obj, JsObject obj2) {
-    _logger.finest("message received");
-    realDartMethod(new SockJsMessageEvent._(obj2));
-  }
-}
-
-class _OnOpenCallbackCaller {
-  final OnOpenCallback realDartMethod;
-
-  _OnOpenCallbackCaller(this.realDartMethod);
-
-  void call(JsObject obj, JsObject obj2) {
-    _logger.finest("SockJS connection established");
-    realDartMethod(new SockJsOpenEvent._());
-  }
-}
-
-class _OnCloseCallbackCaller {
-  final OnCloseCallback realDartMethod;
-
-  _OnCloseCallbackCaller(this.realDartMethod);
-
-  void call(JsObject obj, JsObject obj2) {
-    _logger.finest("SockJS connection closed");
-    realDartMethod(new SockJsCloseEvent._());
-  }
-}
-
 enum EventType { CLOSE, MESSAGE, OPEN }
 
+/// Base for SockJS events.
 abstract class _SimpleEvent {
-  EventType _type;
-
-  _SimpleEvent(this._type);
-
-  EventType get type => _type;
+  final EventType type;
+  const _SimpleEvent(this.type);
 }
 
-/**
- * Message wrapper for received messages.
- */
-class SockJsMessageEvent extends _SimpleEvent {
-  String _data;
-
-  SockJsMessageEvent._(JsObject fromWire) : super(EventType.MESSAGE) {
-    _data = fromWire['data'];
-  }
-
-  String get data => _data;
-}
-
+/// SockJS open event.
 class SockJsOpenEvent extends _SimpleEvent {
-  SockJsOpenEvent._() : super(EventType.OPEN);
+  static const SockJsOpenEvent _instance = const SockJsOpenEvent._();
+  const SockJsOpenEvent._() : super(EventType.OPEN);
 }
 
+/// SockJS close event.
 class SockJsCloseEvent extends _SimpleEvent {
-  SockJsCloseEvent._() : super(EventType.CLOSE);
+  static const SockJsCloseEvent _instance = const SockJsCloseEvent._();
+  const SockJsCloseEvent._() : super(EventType.CLOSE);
+}
+
+/// SockJS message event.
+class SockJsMessageEvent extends _SimpleEvent {
+  final String data;
+  SockJsMessageEvent._(this.data) : super(EventType.MESSAGE);
 }
