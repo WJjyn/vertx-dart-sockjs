@@ -5,11 +5,11 @@ author: Michel Werren <michel.werren@source-motion.ch>
 homepage: https://github.com/wem/vertx-dart-sockjs
 
 environment:
-  sdk: '>=1.0.0 <2.0.0'
+  sdk: '>=1.23.0 <2.0.0'
 
 dependencies:
-  js:
+  js: ^0.6.1
   logging:
 
 dev_dependencies:
-  test:
+  test: ^0.12.20

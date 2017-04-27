@@ -9,7 +9,7 @@
     <version>0.3.4</version>
 
     <properties>
-        <vertx.version>3.3.2</vertx.version>
+        <vertx.version>3.4.1</vertx.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
