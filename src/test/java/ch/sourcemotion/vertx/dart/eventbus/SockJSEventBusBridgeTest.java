@@ -1,5 +1,6 @@
-package ch.sourcemotion.vertx.dart.sockjs;
+package ch.sourcemotion.vertx.dart.eventbus;
 
+import ch.sourcemotion.vertx.dart.sockjs.AbstractClientServerTest;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -14,7 +15,6 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,15 +68,6 @@ public class SockJSEventBusBridgeTest extends AbstractClientServerTest
     }
 
 
-    @After
-    public void tearDown () throws Exception
-    {
-        httpServer.close();
-    }
-
-
-
-
     @Test( timeout = 10000 )
     public void serverMotivatedEventTest ( TestContext context ) throws Exception
     {
@@ -107,43 +98,4 @@ public class SockJSEventBusBridgeTest extends AbstractClientServerTest
             vertx.cancelTimer( id );
         } );
     }
-
-
-    @Test( timeout = 10000 )
-    public void clientMotivatedEventTest ( TestContext context ) throws Exception
-    {
-        final Async async = context.async( 5 );
-
-        vertx.eventBus().consumer( "simpleSendConsumer", message ->
-        {
-            context.assertEquals( "headerValue", message.headers().get( "headerName" ) );
-            context.assertEquals( 1, message.body() );
-            async.countDown();
-        } );
-        vertx.eventBus().consumer( "publishConsumer", message ->
-        {
-            context.assertEquals( "headerValue", message.headers().get( "headerName" ) );
-            context.assertEquals( 2, message.body() );
-            async.countDown();
-        } );
-
-        vertx.eventBus().consumer( "consumerWithReply", message ->
-        {
-            context.assertEquals( "headerValue", message.headers().get( "headerName" ) );
-            context.assertEquals( 3, message.body() );
-            message.reply( 3, new DeliveryOptions().addHeader( "headerName", message.headers().get( "headerName" ) ) );
-            async.countDown();
-        } );
-
-        vertx.eventBus().consumer( "consumerWithReplyAsync", message ->
-        {
-            context.assertEquals( "headerValue", message.headers().get( "headerName" ) );
-            context.assertEquals( 4, message.body() );
-            message.reply( 4, new DeliveryOptions().addHeader( "headerName", message.headers().get( "headerName" ) ) );
-            async.countDown();
-        } );
-
-        startTestClient( context, async, "test/client_to_server_event_test.dart" );
-    }
-
 }

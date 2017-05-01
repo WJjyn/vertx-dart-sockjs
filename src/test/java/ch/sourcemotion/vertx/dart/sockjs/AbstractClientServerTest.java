@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * @author Michel Werren
  */
-abstract class AbstractClientServerTest
+public abstract class AbstractClientServerTest
 {
     private static final String WORK_DIR_CONFIG_KEY = "working.dir";
 
@@ -34,7 +34,7 @@ abstract class AbstractClientServerTest
      *
      * @throws IOException
      */
-    void prepareClientsideTest (String testName) throws IOException
+    public void prepareClientsideTest (String testName) throws IOException
     {
         try ( InputStream is = getClass().getResourceAsStream( "/test-config.properties" ) )
         {
@@ -70,7 +70,7 @@ abstract class AbstractClientServerTest
      * @param testFile
      * @throws Exception
      */
-    void startTestClient ( TestContext context, Async async, String testFile ) throws Exception
+    public void startTestClient ( TestContext context, Async async, String testFile ) throws Exception
     {
         final CompletableFuture<Integer> out = new CompletableFuture<>();
         new Thread( () ->

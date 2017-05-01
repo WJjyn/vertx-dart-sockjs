@@ -1,15 +1,13 @@
-library ch.sourcemotion.vertx;
-
 import 'dart:async';
-import 'dart:html';
+import 'dart:collection';
+import 'dart:convert';
 import 'dart:js';
 
+import 'package:js/js_util.dart';
 import 'package:logging/logging.dart';
 import 'package:vertx_dart_sockjs/src/vertx_eb_impl.dart';
 
-/**
- * General type for all exceptions from the Vert.x Dart abstraction.
- */
+/// Exception, mainly used for wrong use of the [EventBus].
 class EventBusException implements Exception {
   final String message;
 
@@ -21,138 +19,114 @@ class EventBusException implements Exception {
   }
 }
 
-/**
- * T usually [JsObject] or [String]
- */
-typedef void Consumer<VALUE, REPLY>(VertxEventBusMessage<VALUE, REPLY> messageValue);
+/// Consumer of incipient events from the Vertx event bus.
+typedef void Consumer(VertxMessage messageValue);
 
-/**
- * Entry point to the connection API with the Vert.x SockJS event bus bidge: http://vertx.io/docs/vertx-web/java/#_sockjs_event_bus_bridge.
- *
- * Based on SockJS version 0.3.4
- */
+/// Consumer of reply events from the Vertx event bus.
+typedef void ReplyConsumer(AsyncResult result);
+
+/// Entry point to the connection API with the Vert.x SockJS event bus bidge: http://vertx.io/docs/vertx-web/java/#_sockjs_event_bus_bridge.
+/// Based on SockJS version 0.3.4
 class EventBus {
-  static final Logger _logger = new Logger("EventBus");
+  static final Logger _log = new Logger("EventBus");
 
-  final EventBusImpl _eb;
+  final EventBusJS _eb;
 
-  const EventBus._(this._eb);
+  /// When [true] the client tries to convert the body of any received message into a [Map] with [Json.decode]
+  final bool autoConvertMessageBodies;
 
-  /**
-     * Starts a new [EventBus] instance.
-     *
-     * @return [Future] which will be called when the event bus becomes ready.
-     */
-  static Future<EventBus> create(String url) {
+  /// When given all [Consumer] will get executed within this zone. Useful for Angular for example.
+  final Zone consumerZone;
+
+  const EventBus._(this._eb, {bool this.autoConvertMessageBodies = false, this.consumerZone});
+
+  /// Starts a new [EventBus] instance.
+  /// Returns [Future] which will be called when the event bus becomes ready.
+  static Future<EventBus> create(String url, {EventBusJSOptions options, bool autoConvertMessageBodies = false, Zone consumerZone}) {
     Completer<EventBus> out = new Completer();
-    EventBusImpl impl = new EventBusImpl(url, null);
-    impl.onopen = new JsFunction.withThis(new EventbusStateCallback(() {
-      out.complete(new EventBus._(impl));
+    EventBusJS impl = new EventBusJS(url, options);
+    impl.onopen = allowInterop(() {
+      _log.fine("Vertx event bus started");
+      out.complete(new EventBus._(impl, autoConvertMessageBodies: autoConvertMessageBodies, consumerZone: consumerZone));
+    });
+
+    return out.future;
+  }
+
+  /// Applies callback when the event bus connection get closed.
+  void onClose(void callback()) {
+    _eb.onclose = allowInterop((_) {
+      _log.finest("Vertx event bus closed");
+      callback();
+    });
+  }
+
+  /// Close the underlying event bus
+  void close() => _eb.close();
+
+  /// Sends an event over the bus to that [address] with this [body] and [headers].
+  void send(String address, {Object body, Map<String, String> headers}) {
+    _eb.send(address, body, _fromMapToJson(headers), null);
+    _log.finest("Vertx event sent to $address");
+  }
+
+  /// Sends an event over the bus to that [address] with this [body] and [headers].
+  /// A reply will be expected for which the [consumer] get called when was received.
+  void sendWithReply(String address, ReplyConsumer consumer, {Object body, Map<String, String> headers}) {
+    _eb.send(address, body, _fromMapToJson(headers), allowInterop((MessageFailureJS failure, VertxMessageJS msg) {
+      _log.finest("Vertx event received reply on address $address");
+      _runReplyWithinZone(
+          consumerZone, consumer, new AsyncResult._(failure, new VertxMessage._(msg, autoConvertMessageBodies, consumerZone)));
+    }));
+    _log.finest("Vertx event sent to $address");
+  }
+
+  /// Like [sendWithReply] but with use of async / await instead of a [Consumer]. So the returned [Future] get called when the
+  /// reply was received.
+  Future<AsyncResult> sendWithReplyAsync(String address, {Object body, Map<String, String> headers}) async {
+    Completer<AsyncResult> out = new Completer();
+
+    _eb.send(address, body, _fromMapToJson(headers), allowInterop((MessageFailureJS failure, [VertxMessageJS msg]) {
+      _log.finest("Vertx event received reply on address $address");
+      _runReplyWithinZone(
+          consumerZone, out.complete, new AsyncResult._(failure, new VertxMessage._(msg, autoConvertMessageBodies, consumerZone)));
     }));
 
+    _log.finest("Vertx event sent to $address");
     return out.future;
   }
 
-  /**
-     * Applies callback when the event bus connection get closed.
-     */
-  void onClose(void callback()) {
-    _eb.onclose = new JsFunction.withThis(callback);
+  /// Like [send] but publishes and no reply possible.
+  void publish(String address, {Object body, Map<String, String> headers}) {
+    _eb.publish(address, body, _fromMapToJson(headers));
+    _log.finest("Vertx event published to $address");
   }
 
-  /**
-     * Send one way message.
-     *
-     * @param address The address to message to
-     * @param message Main content of the message
-     * @param headers Optional headers of the message
-     */
-  void send(String address, Object message, [Map<String, String> headers]) {
-    _eb.send(address, message, _fromMapToObject(headers), null);
-  }
-
-  /**
-     * Send message with expect reply.
-     *
-     * @param address The address to message to
-     * @param message Main content of the message
-     * @param headers Optional headers of the message
-     * @param consumer Consumer witch will be receive the reply
-     */
-  void sendWithReply(String address, Object message, Consumer consumer, [Map<String, String> headers]) {
-    _eb.send(address, message, _fromMapToObject(headers), new JsFunction.withThis(new _ReplyConsumerCaller(consumer)));
-  }
-
-  /**
-     * Same as [sendWithReply] with the possibility to use async / await.
-     *
-     * @param address The address to message to
-     * @param message Main content of the message
-     * @param headers Optional headers of the message
-     */
-  Future<VertxEventBusMessage> sendWithReplyAsync(String address, Object message, [Map<String, String> headers]) async {
-    Completer<VertxEventBusMessage> out = new Completer();
-
-    _eb.send(address, message, _fromMapToObject(headers), new JsFunction.withThis(new _ReplyConsumerCaller((VertxEventBusMessage msg) {
-      out.complete(msg);
-    })));
-
-    return out.future;
-  }
-
-  /**
-     * Publish message.
-     *
-     * @param address The address to message to
-     * @param message Main content of the message
-     * @param headers Optional headers of the message
-     */
-  void publish(String address, Object message, [Map<String, String> headers]) {
-    _eb.publish(address, message, _fromMapToObject(headers));
-  }
-
-  /**
-     * Consumer of messages on a address.
-     *
-     * @param address Address the consumer will receive messages on.
-     * @param consumer Will receive messages.
-     */
+  /// Consumer of messages on a address.
+  /// [address] the consumer will receive messages on. [consumer] receive messages.
   ConsumerRegistry consumer(String address, Consumer consumer) {
-    _eb.registerHandler(address, new JsFunction.withThis(new _CommonConsumerCaller(consumer)));
+    _eb.registerHandler(address, allowInterop((VertxMessageJS msg) {
+      _runWithinZone(consumerZone, consumer, new VertxMessage._(msg, autoConvertMessageBodies, consumerZone));
+    }));
+    _log.finest("Vertx consumer registered on $address");
     return new ConsumerRegistry._(consumer, address, _eb);
   }
 }
 
-/**
- * Callback when the event bus ready state changes.
- */
-class EventbusStateCallback {
-  final dynamic realCallback;
-
-  const EventbusStateCallback(this.realCallback);
-
-  void call(JsObject obj) {
-    realCallback();
-  }
-}
-
-/**
- * Registry of a consumer. Call unregister to remove the consumer for the address
- */
+/// Registry of a consumer. Call unregister to remove the consumer for the address
 class ConsumerRegistry {
-  static final Logger _logger = new Logger("ConsumerRegistry");
+  static final Logger _log = new Logger("ConsumerRegistry");
 
   final Consumer _consumer;
 
   final String _address;
 
-  final EventBusImpl _eb;
+  final EventBusJS _eb;
 
   const ConsumerRegistry._(this._consumer, this._address, this._eb);
 
   void unregister() {
-    _logger.finest("unregister consumer for address: $address");
-
+    _log.finest("Vertx consumer unregistered on $address");
     _eb.unregisterHandler(_address);
   }
 
@@ -161,95 +135,141 @@ class ConsumerRegistry {
   Consumer get consumer => _consumer;
 }
 
-/**
- * Caller for a consumer of reply messages by javascript.
- */
-class _CommonConsumerCaller {
-  static final Logger _logger = new Logger("_CommonConsumerCaller");
+/// Possible failure types on event replies
+enum FailureType { NO_HANDLERS, RECIPIENT_FAILURE, TIMEOUT }
 
-  final Consumer consumer;
+final Map<String, FailureType> _failureTypes = {
+  "NO_HANDLERS": FailureType.NO_HANDLERS,
+  "RECIPIENT_FAILURE": FailureType.RECIPIENT_FAILURE,
+  "TIMEOUT": FailureType.TIMEOUT
+};
 
-  const _CommonConsumerCaller(this.consumer);
+/// Result of a an event with reply. In fact the state of returned state of the consumer on server side.
+class AsyncResult {
+  final VertxMessage message;
 
-  void call(JsArray arr, JsObject ignored, JsObject message) {
-    VertxEventBusMessage vMessage = new VertxEventBusMessage._(message);
-    _logger.finest("event received on address: ${message['address']} get delivered to consumer: $consumer");
-    consumer(vMessage);
-  }
+  final MessageFailureJS _failure;
+
+  const AsyncResult._(this._failure, this.message);
+
+  /// Return [true] if the event has failed. Only useful on replies.
+  bool get failed => _failure != null;
+
+  bool get success => !failed;
+
+  FailureType get failureType => failed ? _failureTypes[_failure.failureType] : null;
+
+  String get failureMessage => failed ? _failure.message : null;
+
+  int get failureCode => failed ? _failure.failureCode : null;
 }
 
-/**
- * Caller for a consumer of reply messages by javascript.
- */
-class _ReplyConsumerCaller {
-  static final Logger _logger = new Logger("_ReplyConsumerCaller");
+/// Message that get delivered to [Consumer]
+class VertxMessage {
+  static final Logger _log = new Logger("VertxMessage");
 
-  final Consumer consumer;
+  final VertxMessageJS _impl;
 
-  const _ReplyConsumerCaller(this.consumer);
+  final bool _decode;
 
-  void call(Window w, JsObject header, JsObject message) {
-    try {
-      VertxEventBusMessage vMessage = new VertxEventBusMessage._(message);
-      _logger.finest("event with expect reply received on address: ${message['address']} get delivered to consumer");
-      consumer(vMessage);
-    } catch (e, st) {
-      _logger.severe("Could not deliver received event on address: ${message['address']} to consumer", e, st);
-    }
-  }
-}
+  final Zone _consumerZone;
 
-/**
- * Message, received from the server SockJS event bus bridge.
- *
- * {failureCode: json.failureCode, failureType: json.failureType, message: json.message}
- */
-class VertxEventBusMessage<VALUE, REPLY> {
-  static const reply_function_property = "reply";
+  VertxMessage._(this._impl, this._decode, this._consumerZone);
 
-  String _address;
-  VALUE _body;
-  String _type;
-  JsObject _headers;
-  JsObject _wireObject;
-
-  VertxEventBusMessage._(JsObject wireObject) {
-    _address = wireObject["address"];
-    _body = wireObject["body"];
-    _type = wireObject["type"];
-    _headers = wireObject["headers"];
-    _wireObject = wireObject;
-  }
-
-  /**
-     * Sends a reply to the sender of the incipient event.
-     */
-  void reply(REPLY reply, Map<String, String> headers) {
+  /// Sends a reply on this message with that [body] and [headers]. When the [replyConsumer] if present,
+  /// then a further reply will be expected.
+  void reply({Object body, Map<String, String> headers, ReplyConsumer replyConsumer}) {
     if (expectReply) {
-      _wireObject.callMethod(reply_function_property, [reply, _fromMapToObject(headers)]);
+      if (replyConsumer != null) {
+        _impl.reply(body, _fromMapToJson(headers), allowInterop((MessageFailureJS failure, VertxMessageJS msg) {
+          _runReplyWithinZone(_consumerZone, replyConsumer, new AsyncResult._(failure, new VertxMessage._(msg, _decode, _consumerZone)));
+          _log.finest("Vertx reply answer event received for initial on address: $address");
+        }));
+        _log.finest("Vertx reply event sent as answer on address: $address");
+      } else {
+        _impl.reply(body, _fromMapToJson(headers), null);
+        _log.finest("Vertx reply event sent as answer on address: $address");
+      }
     } else {
       throw new EventBusException("Sender of the message on address $address doesn't expect a reply message");
     }
   }
 
-  VALUE get body => _body;
+  /// Replies on this message and expect a further reply.
+  Future<VertxMessage> replyAsync({Object body, Map<String, String> headers}) {
+    if (expectReply) {
+      Completer<VertxMessage> completer = new Completer();
 
-  String get address => _address;
+      _impl.reply(body, _fromMapToJson(headers), allowInterop((MessageFailureJS failure, VertxMessageJS msg) {
+        _runReplyWithinZone(_consumerZone, completer.complete, new AsyncResult._(failure, new VertxMessage._(msg, _decode, _consumerZone)));
+        _log.finest("Vertx reply answer event received for initial on address: $address");
+      }));
 
-  String get type => _type;
+      _log.finest("Vertx reply event sent as answer on address: $address");
 
-  JsObject get headers => _headers;
+      return completer.future;
+    } else {
+      throw new EventBusException("Sender of the message on address $address doesn't expect a reply message");
+    }
+  }
 
-  bool get expectReply => _wireObject.hasProperty(reply_function_property);
+  Object get body {
+    if (_decode) {
+      if (_impl.body != null) {
+        try {
+          return JSON.decode(_impl.body);
+        } catch (e) {
+          return _impl.body;
+        }
+      } else {
+        return null;
+      }
+    } else {
+      return _impl.body;
+    }
+  }
+
+  /// Returns the address of the event
+  String get address => _impl.address;
+
+  /// Returns the type of the event
+  String get type => _impl.type;
+
+  String getHeader(String key) => getProperty(_impl.headers, key);
+
+  List<String> get headerKeys => getKeys(_impl.headers);
+
+  /// Returns [true] when the event contains a address to reply on. Otherwise [false]
+  bool get expectReply => _impl.replyAddress != null && _impl.replyAddress.isNotEmpty;
 }
 
-/**
- * Converts a Dart [Map] to a [JsObject]
- */
-JsObject _fromMapToObject(Map<String, String> map) {
+/// Converts a Dart [Map] to javascript object
+dynamic _fromMapToJson(Map<String, String> map) {
   if (map != null) {
-    return new JsObject.jsify(map);
+    return parse(JSON.encode(map));
   } else {
     return null;
+  }
+}
+
+/// When [zone] is defined, consumer will get guarded executed within that.
+void _runReplyWithinZone(Zone zone, ReplyConsumer consumer, AsyncResult result) {
+  if (zone != null) {
+    zone.runGuarded(() {
+      consumer(result);
+    });
+  } else {
+    consumer(result);
+  }
+}
+
+/// When [zone] is defined, consumer will get guarded executed within that.
+void _runWithinZone(Zone zone, Consumer consumer, VertxMessage msg) {
+  if (zone != null) {
+    zone.runGuarded(() {
+      consumer(msg);
+    });
+  } else {
+    consumer(msg);
   }
 }

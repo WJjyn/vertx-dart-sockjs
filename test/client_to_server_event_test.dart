@@ -1,9 +1,8 @@
+@TestOn("browser")
+@Timeout(const Duration(seconds: 10))
 import 'dart:async';
-import 'dart:js';
 
 import 'package:logging/logging.dart';
-@TestOn("dartium")
-@Timeout(const Duration(seconds: 10))
 import 'package:test/test.dart';
 import 'package:vertx_dart_sockjs/vertx_eb.dart';
 
@@ -12,52 +11,123 @@ final Logger _logger = new Logger("ClientToServerTest");
 final Map<String, String> headers = {"headerName": "headerValue"};
 
 main() async {
+  // Logger
+  Logger.root.level = Level.ALL;
+  recordStackTraceAtLevel = Level.SEVERE;
+  Logger.root.onRecord.listen((LogRecord rec) {
+    if (rec.stackTrace == null) {
+      print('${rec.level.name} -> ${rec.loggerName}: ${rec.message}');
+    } else {
+      print('${rec.level.name} -> ${rec.loggerName}: ${rec.message} | ${rec.error}');
+      print("${rec.stackTrace}");
+    }
+  });
+
   EventBus eventBus;
 
-  setUp(() async {
-    Logger.root.level = Level.ALL;
-    recordStackTraceAtLevel = Level.SEVERE;
-    Logger.root.onRecord.listen((LogRecord rec) {
-      if (rec.stackTrace == null) {
-        print('${rec.level.name} -> ${rec.loggerName}: ${rec.message}');
-      } else {
-        print('${rec.level.name} -> ${rec.loggerName}: ${rec.message} | ${rec.error}');
-        print("${rec.stackTrace}");
-      }
-    });
-    _logger.info("try to connect to server");
+  tearDown(() {
+    if (eventBus != null) {
+      eventBus.close();
+    }
+  });
+
+  test("Send test", () async {
     eventBus = await EventBus.create("http://localhost:9000/eventbus");
-    _logger.info("connected to server");
+    eventBus.send("simpleSend", body: 1, headers: headers);
   });
 
-  test("Client motivated test", () async {
-    Zone z = Zone.current;
-
-    int expectConsumerValue = 3;
-
-    final Function asyncCallback = expectAsync((int bodyValue, JsObject headers) {
-      _logger.info("Call async callback");
-
-      z.runBinary(expect, bodyValue, expectConsumerValue++);
-      _logger.info("Body value validated");
-
-      z.runBinary(expect, headers["headerName"], "headerValue");
-      _logger.info("Header value validated");
-    }, count: 2);
-
-    eventBus.send("simpleSendConsumer", 1, headers);
-    _logger.info("message to simpleSendConsumer send");
-
-    eventBus.send("publishConsumer", 2, headers);
-    _logger.info("message to publishConsumer send");
-
-    eventBus.sendWithReply("consumerWithReply", 3, (VertxEventBusMessage<int, Object> message) {
-      _logger.info("reply for consumerWithReply received");
-      z.runBinary(asyncCallback, message.body, message.headers);
-    }, headers);
-
-    VertxEventBusMessage<int, Object> reply = await eventBus.sendWithReplyAsync("consumerWithReplyAsync", 4, headers);
-    _logger.info("reply for consumerWithReplyAsync received");
-    z.runBinary(asyncCallback, reply.body, reply.headers);
+  test("Publish test", () async {
+    EventBus eventBus = await EventBus.create("http://localhost:9000/eventbus");
+    eventBus.publish("publish", body: 2, headers: headers);
+    eventBus.close();
   });
+
+  test("Send with reply test", () async {
+    eventBus = await EventBus.create("http://localhost:9000/eventbus", consumerZone: Zone.current);
+
+    final Completer<bool> done = new Completer();
+
+    eventBus.sendWithReply("withReply", (AsyncResult result) {
+      _logger.info("reply for withReply received");
+      expect(result.failed, isFalse);
+      expect(result.success, isTrue);
+      expect(result.message, isNotNull);
+      VertxMessage msg = result.message;
+      expect(msg.body, equals(3));
+//      expect(msg.headers, equals(headers));
+      _logger.info("checked!!!!!");
+
+      done.complete(true);
+    }, body: 3, headers: headers);
+
+    bool successful = await done.future;
+    print( 'Send with reply test finished' );
+  });
+
+//  test("Send with reply async await test", () async {
+//    eventBus = await EventBus.create("http://localhost:9000/eventbus", consumerZone: Zone.current);
+//
+//    VertxMessage message = await eventBus.sendWithReplyAsync("withReply", body: 3, headers: headers);
+//
+//    _logger.info("reply for withReply received");
+//    expect(message.failed, isFalse);
+//    expect(message.success, isTrue);
+//    expect(message.body, equals(3));
+//    expect(message.headers, equals(headers));
+//  });
+
+//  test("Send with reply auto conversion test", () async {
+//    EventBus eventBus = await EventBus.create("http://localhost:9000/eventbus", consumerZone: Zone.current, autoConvertMessageBodies: true);
+//
+//    final Completer<bool> done = new Completer();
+//
+//    final Map<String, String> body = {"key": 10};
+//
+//    eventBus.sendWithReply("withReply", (VertxMessage message) {
+//      _logger.info("reply for withReply (auto conversion) received");
+//
+//      expect(message.failed, isFalse);
+//      expect(message.success, isTrue);
+//      expect(message.body, body);
+//      expect(message.headers, equals(headers));
+//      done.complete(true);
+//    }, body: body, headers: headers);
+//
+//    await done.future;
+//  });
+//
+//  test("Reply and server fail test", () async {
+//    EventBus eventBus = await EventBus.create("http://localhost:9000/eventbus", consumerZone: Zone.current);
+//
+//    VertxMessage message = await eventBus.sendWithReplyAsync("failing");
+//
+//    _logger.info("reply for withReply received");
+//    expect(message.failed, isTrue);
+//    expect(message.success, isFalse);
+//    expect(message.failureCode, 1000);
+//    expect(message.failureMessage, "failed");
+//    expect(message.body, isNull);
+//  });
+//
+//  test("Send with reply 2 times async await", () async {
+//    EventBus eventBus = await EventBus.create("http://localhost:9000/eventbus", consumerZone: Zone.current);
+//
+//    VertxMessage message = await eventBus.sendWithReplyAsync("doubleReply", body: 3, headers: headers);
+//    _logger.info("First reply for doubleReply received");
+//
+//    expect(message.failed, isFalse);
+//    expect(message.success, isTrue);
+//    expect(message.body, equals(3));
+//    expect(message.headers, equals(headers));
+//    expect(message.expectReply, isTrue);
+//
+//    VertxMessage secondMessage = await message.replyAsync(body: message.body, headers: message.headers);
+//    _logger.info("Second reply for doubleReply received");
+//
+//    expect(secondMessage.failed, isFalse);
+//    expect(secondMessage.success, isTrue);
+//    expect(secondMessage.body, equals(3));
+//    expect(secondMessage.headers, equals(headers));
+//    expect(secondMessage.expectReply, isTrue);
+//  });
 }
