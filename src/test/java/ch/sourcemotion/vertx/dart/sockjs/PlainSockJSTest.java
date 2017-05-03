@@ -1,5 +1,6 @@
 package ch.sourcemotion.vertx.dart.sockjs;
 
+import ch.sourcemotion.vertx.dart.AbstractClientServerTest;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;

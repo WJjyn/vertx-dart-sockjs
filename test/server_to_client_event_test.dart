@@ -1,11 +1,11 @@
-import 'dart:async';
-@TestOn("dartium")
+@TestOn("browser || phantomjs")
 @Timeout(const Duration(seconds: 10))
-import 'dart:js';
 
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-import 'package:vertx_dart_sockjs/vertx_eb.dart';
+
+import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
+import 'util.dart';
 
 final Logger _logger = new Logger("ServerToClientTest");
 
@@ -13,16 +13,8 @@ main() async {
   EventBus eventBus;
 
   setUp(() async {
-    Logger.root.level = Level.ALL;
-    recordStackTraceAtLevel = Level.SEVERE;
-    Logger.root.onRecord.listen((LogRecord rec) {
-      if (rec.stackTrace == null) {
-        print('${rec.level.name} -> ${rec.loggerName}: ${rec.message}');
-      } else {
-        print('${rec.level.name} -> ${rec.loggerName}: ${rec.message} | ${rec.error}');
-        print("${rec.stackTrace}");
-      }
-    });
+    startLogger();
+
     _logger.info("try to connect to server");
     eventBus = await EventBus.create("http://localhost:9000/eventbus");
     _logger.info("connected to server");

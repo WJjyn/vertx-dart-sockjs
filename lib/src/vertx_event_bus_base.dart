@@ -5,13 +5,13 @@ import 'dart:js';
 
 import 'package:js/js.dart';
 import 'package:vertx_dart_sockjs/sockjs.dart';
+import 'package:vertx_dart_sockjs/src/sockjs_base.dart';
 
 typedef void ReplyConsumerJS(MessageFailureJS failure, VertxMessageJS msg);
 
 typedef void ConsumerJS(VertxMessageJS msg);
 
 typedef void ReplyHandlerJS(Object body, String headers, ReplyConsumerJS replyConsumer);
-
 
 /// Failure state for server site of a sent event
 @JS()
@@ -30,6 +30,8 @@ external List<String> getKeys(jsObject);
 @JS("JSON.parse")
 external dynamic parse(String obj);
 
+@JS("JSON.stringify")
+external String stringify(dynamic obj);
 
 /// Vertx message received over the event bus
 @JS()
@@ -44,7 +46,7 @@ class VertxMessageJS {
   external String get replyAddress;
 
   /// Body / Payload of this event
-  external String get body;
+  external dynamic get body;
 
   external JSObject get headers;
 
@@ -75,10 +77,10 @@ class EventBusJS {
 
   /// Sends an event to the given [address], [body] and [headers]. [body] and [headers] can be null. If the [replyConsumer] is not null,
   /// a reply will be expected.
-  external send(String address, Object body, dynamic headers, ReplyConsumerJS replyConsumer);
+  external send(String address, dynamic body, dynamic headers, ReplyConsumerJS replyConsumer);
 
   /// Published an event to the given [address] with the given [body] and [headers]. [body] and [headers] can be null.
-  external publish(String address, Object body, String headers);
+  external publish(String address, dynamic body, dynamic headers);
 
   /// Registers the given [consumer] on the given [address]. The consumer will receive any event on that [address].
   external registerHandler(String address, ConsumerJS consumer);

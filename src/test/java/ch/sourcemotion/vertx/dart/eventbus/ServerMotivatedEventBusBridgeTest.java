@@ -1,6 +1,6 @@
 package ch.sourcemotion.vertx.dart.eventbus;
 
-import ch.sourcemotion.vertx.dart.sockjs.AbstractClientServerTest;
+import ch.sourcemotion.vertx.dart.AbstractClientServerTest;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -28,11 +28,11 @@ import org.slf4j.LoggerFactory;
  * @author Michel Werren
  */
 @RunWith( VertxUnitRunner.class )
-public class SockJSEventBusBridgeTest extends AbstractClientServerTest
+public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 {
     private static final String WORK_DIR_CONFIG_KEY = "working.dir";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger( SockJSEventBusBridgeTest.class );
+    private static final Logger LOGGER = LoggerFactory.getLogger( ServerMotivatedEventBusBridgeTest.class );
 
     @Rule
     public RunTestOnContext serverRule = new RunTestOnContext();
@@ -72,6 +72,7 @@ public class SockJSEventBusBridgeTest extends AbstractClientServerTest
     public void serverMotivatedEventTest ( TestContext context ) throws Exception
     {
         final Async async = context.async( 4 );
+
         startTestClient( context, async, "test/server_to_client_event_test.dart" );
 
         vertx.setPeriodic( 5000, id ->

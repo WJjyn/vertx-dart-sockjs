@@ -1,10 +1,11 @@
 package ch.sourcemotion.vertx.dart.eventbus;
 
-import ch.sourcemotion.vertx.dart.sockjs.AbstractClientServerTest;
+import ch.sourcemotion.vertx.dart.AbstractClientServerTest;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
@@ -24,9 +25,9 @@ import org.slf4j.LoggerFactory;
  * @author Michel Werren
  */
 @RunWith( VertxUnitRunner.class )
-public class ClientMotivatedEventbusTest extends AbstractClientServerTest
+public class ClientMotivatedEventbusBridgeTest extends AbstractClientServerTest
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger( ClientMotivatedEventbusTest.class );
+    private static final Logger LOGGER = LoggerFactory.getLogger( ClientMotivatedEventbusBridgeTest.class );
 
     @Rule
     public RunTestOnContext serverRule = new RunTestOnContext();
@@ -60,10 +61,10 @@ public class ClientMotivatedEventbusTest extends AbstractClientServerTest
     }
 
 
-    @Test( timeout = 10000 )
+    @Test( timeout = 60000 )
     public void clientMotivatedEventTest ( TestContext context ) throws Exception
     {
-        final Async async = context.async( 4 );
+        final Async async = context.async( 9 );
 
         // 1 time executed
         vertx.eventBus().consumer( "simpleSend", message ->
@@ -87,9 +88,18 @@ public class ClientMotivatedEventbusTest extends AbstractClientServerTest
         // 3 times executed
         vertx.eventBus().consumer( "withReply", message ->
         {
-            LOGGER.info( "withReply" );
+            LOGGER.info( "withReply -> Body: {} of type {}", message.body(), message.body() != null ? message.body().getClass().getName() : null );
             // Tested on the client side
             message.reply( message.body(), new DeliveryOptions().setHeaders( message.headers() ) );
+            async.countDown();
+        } );
+
+        // 1 time executed
+        vertx.eventBus().consumer( "failing", message ->
+        {
+            LOGGER.info( "failing" );
+            // Tested on the client side
+            message.fail( 1000, "failed" );
             async.countDown();
         } );
 
@@ -104,14 +114,24 @@ public class ClientMotivatedEventbusTest extends AbstractClientServerTest
             } );
         } );
 
-        // 1 time executed
-        vertx.eventBus().consumer( "failing", message ->
+        vertx.eventBus().consumer( "complexDto", message ->
         {
-            LOGGER.info( "failing" );
-            // Tested on the client side
-            message.fail( 1000, "failed" );
+            LOGGER.info( "complexDto" );
+            JsonObject dto = new JsonObject( message.body().toString() );
+
+            context.assertEquals( 100, dto.getInteger( "integer" ) );
+            context.assertEquals( "100", dto.getString( "integerString" ) );
+            context.assertEquals( "value", dto.getString( "string" ) );
+            context.assertEquals( 100.1D, dto.getDouble( "doubleValue" ) );
+            context.assertEquals( "100.1", dto.getString( "doubleString" ) );
+            context.assertEquals( true, dto.getBoolean( "boolean" ) );
+            context.assertEquals( "true", dto.getString( "booleanString" ) );
+            context.assertEquals( new JsonObject(  ), dto.getJsonObject( "obj" ) );
+
+            message.reply( message.body(), new DeliveryOptions().setHeaders( message.headers() ) );
             async.countDown();
         } );
+
 
         startTestClient( context, async, "test/client_to_server_event_test.dart" );
     }

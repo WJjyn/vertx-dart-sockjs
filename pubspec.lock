@@ -109,12 +109,12 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.1"
-  js_util:
+  json_object:
     description:
-      name: js_util
+      name: json_object
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.0"
+    version: "1.0.19+1"
   logging:
     description:
       name: logging
@@ -175,12 +175,12 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.3.2"
-  quiver_iterables:
+  quiver:
     description:
-      name: quiver_iterables
+      name: quiver
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.0"
+    version: "0.25.0"
   shelf:
     description:
       name: shelf

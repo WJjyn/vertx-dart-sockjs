@@ -1,4 +1,4 @@
-package ch.sourcemotion.vertx.dart.sockjs;
+package ch.sourcemotion.vertx.dart;
 
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -77,7 +77,8 @@ public abstract class AbstractClientServerTest
         {
             try
             {
-                final int processResult = new ProcessBuilder( "pub", "run", "test", "-p", "dartium", testFile ).directory(
+                final int processResult = new ProcessBuilder( "pub", "run", "test", "-p", "phantomjs", testFile ).directory(
+//                final int processResult = new ProcessBuilder( "pub", "run", "test", "-p", "dartium", "--pause-after-load", testFile ).directory(
                         workDirPath.toFile() ).redirectError( errout.toFile() ).redirectOutput( stdout.toFile() ).start().waitFor();
                 out.complete( processResult == 0 && checkLogForTestSuccess() ? 0 : 1 );
             }

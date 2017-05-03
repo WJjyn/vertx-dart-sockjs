@@ -1,3 +1,5 @@
+@TestOn("browser || phantomjs")
+@Timeout(const Duration(seconds: 10))
 import 'dart:async';
 
 import 'package:logging/logging.dart';
@@ -5,6 +7,8 @@ import 'package:logging/logging.dart';
 @Timeout(const Duration(seconds: 10))
 import 'package:test/test.dart';
 import 'package:vertx_dart_sockjs/sockjs.dart';
+
+import 'util.dart';
 
 final Logger _logger = new Logger("ClientToServerTest");
 
@@ -14,16 +18,8 @@ main() async {
   SockJS sockJS;
 
   setUp(() async {
-    Logger.root.level = Level.ALL;
-    recordStackTraceAtLevel = Level.SEVERE;
-    Logger.root.onRecord.listen((LogRecord rec) {
-      if (rec.stackTrace == null) {
-        print('${rec.level.name} -> ${rec.loggerName}: ${rec.message}');
-      } else {
-        print('${rec.level.name} -> ${rec.loggerName}: ${rec.message} | ${rec.error}');
-        print("${rec.stackTrace}");
-      }
-    });
+    startLogger();
+
     _logger.info("try to connect to server");
     sockJS = await SockJS.create("http://localhost:9000/sockjs");
     _logger.info("connected to server");

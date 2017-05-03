@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:js';
-import 'package:logging/logging.dart';
-import 'src/sockjs_impl.dart';
 
-export 'src/sockjs_impl.dart' show SockJSOptions;
+import 'package:logging/logging.dart';
+import 'package:vertx_dart_sockjs/src/sockjs_base.dart';
 
 final Logger _log = new Logger("SockJS");
 
