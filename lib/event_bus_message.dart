@@ -74,8 +74,12 @@ class VertxMessage<T> {
 
       if (consumer != null) {
         _impl.reply(encoded, encodeHeader(headers), allowInterop((MessageFailureJS failure, [VertxMessageJS msg]) {
-          executeConsumer(_consumerExecDelegate, consumer,
-              new AsyncResult(failure, failure == null ? new VertxMessage(msg, _consumerExecDelegate, _encoderRegistry, decoder) : null));
+          try {
+            executeConsumer(_consumerExecDelegate, consumer,
+                new AsyncResult(failure, failure == null ? new VertxMessage(msg, _consumerExecDelegate, _encoderRegistry, decoder) : null));
+          } catch (e, st) {
+            _log.severe("Failed to execute reply consumer for event on initial address ${_impl?.address}", e, st);
+          }
           _log.finest("Vertx reply answer event received for initial on address: $address");
         }));
         _log.finest("Vertx reply event sent as answer on address: $address");

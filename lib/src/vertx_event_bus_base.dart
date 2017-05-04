@@ -7,11 +7,11 @@ import 'package:js/js.dart';
 import 'package:vertx_dart_sockjs/sockjs.dart';
 import 'package:vertx_dart_sockjs/src/sockjs_base.dart';
 
-typedef void ReplyConsumerJS(MessageFailureJS failure, VertxMessageJS msg);
+/// Consumer for incoming events
+typedef void ConsumerJS(MessageFailureJS failure, VertxMessageJS msg);
 
-typedef void ConsumerJS(VertxMessageJS msg);
-
-typedef void ReplyHandlerJS(Object body, String headers, ReplyConsumerJS replyConsumer);
+/// Handler for incoming reply events
+typedef void ReplyHandlerJS(dynamic body, String headers, ConsumerJS replyConsumer);
 
 /// Failure state for server site of a sent event
 @JS()
@@ -37,7 +37,7 @@ external String stringify(dynamic obj);
 @JS()
 @anonymous
 class VertxMessageJS {
-  external factory VertxMessageJS({String address, String body, String type, JSObject headers, ReplyHandlerJS reply});
+  external factory VertxMessageJS({String address, dynamic body, String type, dynamic headers, ReplyHandlerJS reply});
 
   /// Address of this event.
   external String get address;
@@ -48,13 +48,10 @@ class VertxMessageJS {
   /// Body / Payload of this event
   external dynamic get body;
 
-  external JSObject get headers;
+  external dynamic get headers;
 
   /// Type of this event
   external String get type;
-
-  /// Enables ping on the event bus instance.
-  external void pingEnabled(bool enable);
 
   /// Handler to reply on this event. This handler is only present if the sender of this event expect a reply.
   external ReplyHandlerJS get reply;
@@ -77,7 +74,7 @@ class EventBusJS {
 
   /// Sends an event to the given [address], [body] and [headers]. [body] and [headers] can be null. If the [replyConsumer] is not null,
   /// a reply will be expected.
-  external send(String address, dynamic body, dynamic headers, ReplyConsumerJS replyConsumer);
+  external send(String address, dynamic body, dynamic headers, ConsumerJS replyConsumer);
 
   /// Published an event to the given [address] with the given [body] and [headers]. [body] and [headers] can be null.
   external publish(String address, dynamic body, dynamic headers);
@@ -93,6 +90,9 @@ class EventBusJS {
 
   /// Set the callback which will get called when the event bus got closed.
   external set onclose(Function onCloseCallback);
+
+  /// Enables ping on the event bus instance.
+  external void pingEnabled(bool enable);
 
   /// Close this event bus client.
   external void close();

@@ -49,14 +49,13 @@ class EventBus {
 
   /// Starts a new [EventBus] instance.
   /// Returns [Future] which will be called when the event bus becomes ready.
-  static Future<EventBus> create(String url,
-      {EventBusJSOptions options, bool autoConvertMessageBodies = false, ConsumerExecutionDelegate consumerExecDelegate}) {
+  static Future<EventBus> create(String url, {EventBusJSOptions options, ConsumerExecutionDelegate consumerExecDelegate}) {
     Completer<EventBus> completer = new Completer();
     try {
       // Start event bus
       EventBusJS impl = new EventBusJS(url, options);
       impl.onopen = allowInterop(() {
-        _log.fine("Vertx event bus started");
+        _log.finest("Vertx event bus started");
         completer.complete(new EventBus._(impl, consumerExecDelegate: consumerExecDelegate));
       });
     } catch (e, st) {
@@ -80,9 +79,13 @@ class EventBus {
   /// Sends an event over the bus to that [address] with this [body] and [headers].
   void send(String address, {Object body, Map<String, String> headers}) {
     Object encoded = encodeBody(encoderRegistry, body);
-
     _eb.send(address, encoded, encodeHeader(headers), null);
-    _log.finest("Vertx event sent to $address");
+  }
+
+  /// Like [send] but publishes and no reply possible.
+  void publish(String address, {Object body, Map<String, String> headers}) {
+    Object encoded = encodeBody(encoderRegistry, body);
+    _eb.publish(address, encoded, encodeHeader(headers));
   }
 
   /// Sends an event over the bus to that [address] with this [body] and [headers].
@@ -92,11 +95,13 @@ class EventBus {
     Object encoded = encodeBody(encoderRegistry, body);
 
     _eb.send(address, encoded, encodeHeader(headers), allowInterop((MessageFailureJS failure, [VertxMessageJS msg]) {
-      _log.finest("Vertx event received reply on address $address");
-      executeConsumer(consumerExecDelegate, consumer,
-          new AsyncResult(failure, failure == null ? new VertxMessage(msg, consumerExecDelegate, encoderRegistry, decoder) : null));
+      try {
+        executeConsumer(consumerExecDelegate, consumer,
+            new AsyncResult(failure, failure == null ? new VertxMessage(msg, consumerExecDelegate, encoderRegistry, decoder) : null));
+      } catch (e, st) {
+        _log.severe("Failed to execute reply consumer for event on initial address $address", e, st);
+      }
     }));
-    _log.finest("Vertx event sent to $address");
   }
 
   /// Like [sendWithReply] but with use of async / await instead of a [Consumer]. So the returned [Future] get called when the
@@ -112,21 +117,15 @@ class EventBus {
     return completer.future;
   }
 
-  /// Like [send] but publishes and no reply possible.
-  void publish(String address, {Object body, Map<String, String> headers}) {
-    Object encoded = encodeBody(encoderRegistry, body);
-
-    _eb.publish(address, encoded, encodeHeader(headers));
-    _log.finest("Vertx event published to $address");
-  }
-
-  /// Consumer of messages on a address.
-  /// [address] the consumer will receive messages on. [consumer] receive messages.
+  /// Register a consumer for events on that [address].
   ConsumerRegistry consumer(String address, Consumer<VertxMessage> consumer, {EventBusBodyDecoder decoder}) {
-    _eb.registerHandler(address, allowInterop((VertxMessageJS msg) {
-      executeConsumer(consumerExecDelegate, consumer, new VertxMessage(msg, consumerExecDelegate, encoderRegistry, decoder));
+    _eb.registerHandler(address, allowInterop((dynamic d, VertxMessageJS msg) {
+      try {
+        executeConsumer(consumerExecDelegate, consumer, new VertxMessage(msg, consumerExecDelegate, encoderRegistry, decoder));
+      } catch (e, st) {
+        _log.severe("Failed to execute consumer for event on initial address $address", e, st);
+      }
     }));
-    _log.finest("Vertx consumer registered on $address");
     return new ConsumerRegistry(consumer, address, _eb);
   }
 }

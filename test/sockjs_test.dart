@@ -8,7 +8,7 @@ import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 import 'package:vertx_dart_sockjs/sockjs.dart';
 
-import 'util.dart';
+import 'test_util.dart';
 
 final Logger _logger = new Logger("ClientToServerTest");
 

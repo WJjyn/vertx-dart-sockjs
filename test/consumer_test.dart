@@ -4,7 +4,7 @@
 import 'package:test/test.dart';
 
 import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
-import 'util.dart';
+import 'test_util.dart';
 
 void main() {
   startLogger();

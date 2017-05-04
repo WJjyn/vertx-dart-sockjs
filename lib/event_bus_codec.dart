@@ -1,11 +1,12 @@
 import 'dart:convert';
 
+import 'dart:js';
 import 'package:logging/logging.dart';
+import 'package:vertx_dart_sockjs/src/vertx_event_bus_base.dart';
 
 final Logger _log = new Logger("Codec");
 
-/// Thrown on codec failure. At this moment in fact only when [encodeBody] has failed. Because the javascript event bus
-/// lib RECIPIENT_FAILURE from client.
+/// Thrown on codec failures.
 class CodecException implements Exception {
   final String message;
 
@@ -18,10 +19,10 @@ class CodecException implements Exception {
 }
 
 /// Decoder for bodies of event messages. Is a typedef to provide the best flexibility for decoder / encoder designs.
-typedef T EventBusBodyDecoder<T>(Object body);
+typedef T EventBusBodyDecoder<T>(dynamic body);
 
 /// Encoder for bodies of event messages. Is a typedef to provide the best flexibility for decoder / encoder designs.
-typedef Object EventBusBodyEncoder<T>(T dto);
+typedef dynamic EventBusBodyEncoder<T>(T dto);
 
 /// Registry for [EventBusBodyEncoder]. Encoders can be registered by [Type], so they can be used against there [Type].
 class EncoderRegistry {
@@ -38,7 +39,18 @@ class EncoderRegistry {
 
 final JsonCodec _jsonCodec = new JsonCodec();
 
-final EventBusBodyDecoder _defaultDecoder = (Object o) {
+/// Returns true when the given body is a [String] but it may get converted byte json parsing.
+bool shouldStayAsString(dynamic body) =>
+    body != null && body is String && (num.parse(body, (_) => null) != null || (body == "true" || body == "false"));
+
+/// Returns [true] when that [body] needs to get stringified. Means cannot proceed directly by type or json parser.
+bool needStringify(dynamic body) => body != null && !(body is num || body is String || body is bool);
+
+/// Default [EventBusBodyDecoder], when the user not provides it's own.
+/// - Presaves (int, bool) for numeric and bool types
+/// - Presaves (String) for string representation of numeric or bool values
+/// - For any other value it will be tried to get "jsonify", when that failes the raw value will be delivered to [Consumer].
+final EventBusBodyDecoder _defaultDecoder = (dynamic o) {
   if (o == null) {
     return null;
   }
@@ -46,10 +58,8 @@ final EventBusBodyDecoder _defaultDecoder = (Object o) {
     return o;
   }
   // Presave String as type for much cases as possible
-  if (o is String) {
-    if (int.parse(o, onError: (_) => null) != null || double.parse(o, (_) => null) != null || (o == "true" || o == "false")) {
-      return o;
-    }
+  if (shouldStayAsString(o)) {
+    return o;
   }
   // Last stand is json decoder
   try {
@@ -60,6 +70,11 @@ final EventBusBodyDecoder _defaultDecoder = (Object o) {
   }
 };
 
+/// Default [EventBusBodyEncoder], when the user not provides it's own.
+/// - Presaves (int, bool) for numeric and bool types
+/// - Presaves (String) for string representation of numeric or bool values
+/// - String values will pass the event bus 1 to 1
+/// - For any other value it will be tried to get "jsonify", when that failes the raw value will be delivered to the event bus.
 final EventBusBodyEncoder _defaultEncoder = (Object o) {
   if (o == null) {
     return null;
@@ -81,12 +96,16 @@ final EventBusBodyEncoder _defaultEncoder = (Object o) {
 };
 
 /// Decodes and returns that body decoded with the given [EventBusBodyDecoder]. If the user not provides its own [EventBusBodyDecoder],
-/// [JSON.decoder] will be used.
-Object decodeBody<T>(EventBusBodyDecoder<T> decoder, Object body) {
+/// [_defaultDecoder] will be used.
+Object decodeBody<T>(EventBusBodyDecoder<T> decoder, dynamic body) {
   if (body != null) {
     // Take default decoder when no defined
     EventBusBodyDecoder dec = decoder ?? _defaultDecoder;
     try {
+      // Json object in this case ... string representation
+      if (needStringify(body)) {
+        body = stringify(body);
+      }
       return dec(body);
     } catch (e, st) {
       String message = "Failed to decode body: $body of type ${body?.runtimeType} with decoder: ${dec}.";
@@ -99,8 +118,8 @@ Object decodeBody<T>(EventBusBodyDecoder<T> decoder, Object body) {
   }
 }
 
-/// Encodes and returns that body object with that [Converter<Object, String>].
-/// If the user has not registered an [EventBusBodyEncoder] for that type, [JSON.encoder] will be used.
+/// Encodes and returns that body object with that [EventBusBodyEncoder].
+/// If the user has not registered an [EventBusBodyEncoder] for that type, [_defaultEncoder] will be used.
 Object encodeBody<T>(EncoderRegistry encoderReg, T body) {
   if (body != null) {
     // Take default encoder when no defined

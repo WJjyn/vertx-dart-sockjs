@@ -64,6 +64,8 @@ public class ClientMotivatedEventbusBridgeTest extends AbstractClientServerTest
     @Test( timeout = 60000 )
     public void clientMotivatedEventTest ( TestContext context ) throws Exception
     {
+        vertx.exceptionHandler( context.exceptionHandler() );
+
         final Async async = context.async( 9 );
 
         // 1 time executed
@@ -131,7 +133,6 @@ public class ClientMotivatedEventbusBridgeTest extends AbstractClientServerTest
             message.reply( message.body(), new DeliveryOptions().setHeaders( message.headers() ) );
             async.countDown();
         } );
-
 
         startTestClient( context, async, "test/client_to_server_event_test.dart" );
     }

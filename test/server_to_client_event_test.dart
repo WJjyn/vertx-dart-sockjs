@@ -1,13 +1,13 @@
+import 'dart:async';
 @TestOn("browser || phantomjs")
 @Timeout(const Duration(seconds: 10))
-
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
 import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
-import 'util.dart';
+import 'test_util.dart';
 
-final Logger _logger = new Logger("ServerToClientTest");
+final Logger _log = new Logger("ServerToClientTest");
 
 main() async {
   EventBus eventBus;
@@ -15,56 +15,109 @@ main() async {
   setUp(() async {
     startLogger();
 
-    _logger.info("try to connect to server");
-    eventBus = await EventBus.create("http://localhost:9000/eventbus");
-    _logger.info("connected to server");
+    _log.info("try to connect to server");
+    eventBus = await EventBus.create("http://localhost:9000/eventbus", consumerExecDelegate: Zone.current.runGuarded);
+    _log.info("connected to server");
   });
 
-//  test("Server motivated event test", () async {
-//    Zone z = Zone.current;
-//
-//    int currentConsumerNumber = 0;
-//
-//    final Function asyncCallback = expectAsync((int bodyValue, JsObject headers) {
-//      _logger.info("Call async callback");
-//
-//      z.runBinary(expect, bodyValue, ++currentConsumerNumber);
-//      _logger.info("Body value validated");
-//
-//      z.runBinary(expect, headers["headerName"], "headerValue");
-//      _logger.info("Header value validated");
-//    }, count: 3);
-//
-//    eventBus.consumer("simpleSendConsumer", (VertxMessage msg) {
-//      _logger.info("Event on address simpleSendConsumer received");
-//
-//      int bodyValue = msg.body;
-//      JsObject header = msg.headers;
-//      z.runBinary(asyncCallback, bodyValue, header);
-//    });
-//
-//    _logger.info("simpleSendConsumer registered");
-//
-//    eventBus.consumer("publishConsumer", (VertxMessage msg) {
-//      _logger.info("Event on address publishConsumer received");
-//
-//      int bodyValue = msg.body;
-//      JsObject header = msg.headers;
-//
-//      z.runBinary(asyncCallback, bodyValue, header);
-//    });
-//    _logger.info("publishConsumer registered");
-//
-//    eventBus.consumer("consumerWithReply", (VertxMessage<int> msg) {
-//      _logger.info("Event on address consumerWithReply received");
-//
-//      int bodyValue = msg.body;
-//      JsObject header = msg.headers;
-//
-//      msg.reply(bodyValue, {"headerName": "${header['headerName']}"});
-//
-//      z.runBinary(asyncCallback, bodyValue, header);
-//    });
-//    _logger.info("consumerWithReply registered");
-//  });
+  test("Server motivated event test", () async {
+    TestControl control = new TestControl(5);
+
+    eventBus.consumer("simpleSend", (VertxMessage msg) {
+      _log.info("Event on address simpleSendConsumer received");
+
+      expect(msg.body, 1);
+      expect(msg.headers["headerName"], "headerValue");
+
+      control.visited();
+    });
+
+    _log.info("simpleSendConsumer registered");
+
+    eventBus.consumer("publish", (VertxMessage msg) {
+      _log.info("Event on address publish received");
+
+      expect(msg.body, 2);
+      expect(msg.headers["headerName"], "headerValue");
+
+      control.visited();
+    });
+    _log.info("publishConsumer registered");
+
+    eventBus.consumer("withReply", (VertxMessage<int> msg) {
+      _log.info("Event on address withReply received");
+
+      expect(msg.body, 3);
+      expect(msg.headers["headerName"], "headerValue");
+
+      msg.reply(body: msg.body, headers: msg.headers);
+
+      control.visited();
+    });
+    _log.info("withReply registered");
+
+    eventBus.consumer("doubleReply", (VertxMessage<int> msg) async {
+      _log.info("Event on address doubleReply received");
+
+      expect(msg.body, 4);
+      expect(msg.headers["headerName"], "headerValue");
+
+      AsyncResult result = await msg.replyAsync(body: msg.body, headers: msg.headers);
+      _log.info("Event on address doubleReply received");
+
+      expect(result.success, isTrue);
+      expect(result.failed, isFalse);
+      expect(result.message.body, 4);
+      expect(result.message.headers["headerName"], "headerValue");
+
+      result.message.reply(body: result.message.body, headers: result.message.headers);
+
+      control.visited();
+    });
+
+    eventBus.encoderRegistry[MoreComplexTestDto] = MoreComplexTestDtoCodec.encoder;
+
+    eventBus.consumer("complexWithReply", (VertxMessage<MoreComplexTestDto> msg) {
+      _log.info("Event on address withReply received");
+
+      expect(msg.body, new isInstanceOf<MoreComplexTestDto>());
+      MoreComplexTestDto dto = msg.body;
+      expect(dto.integer, 100);
+      expect(dto.integerString, "100");
+      expect(dto.string, "value");
+      expect(dto.doubleValue, 100.1);
+      expect(dto.doubleString, "100.1");
+      expect(dto.boolean, isTrue);
+      expect(dto.booleanString, "true");
+      expect(dto.obj, isNotNull);
+
+      expect(msg.headers["headerName"], "headerValue");
+
+      msg.reply(body: msg.body, headers: msg.headers);
+
+      control.visited();
+    }, decoder: MoreComplexTestDtoCodec.decoder);
+
+    _log.info("doubleReply registered");
+
+    await control.waitUntilDone();
+  });
+}
+
+class TestControl {
+  final Completer completer = new Completer();
+
+  final int expectVisits;
+
+  int visits = 0;
+
+  TestControl(this.expectVisits);
+
+  visited() {
+    if (++visits >= expectVisits) {
+      completer.complete();
+    }
+  }
+
+  Future waitUntilDone() => completer.future;
 }
