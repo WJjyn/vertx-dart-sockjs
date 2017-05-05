@@ -69,7 +69,9 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 
     /**
      * Test event bus for events they are initiated from the server side.
+     *
      * @param context
+     *
      * @throws Exception
      */
     @Test( timeout = 60000 )
@@ -97,7 +99,7 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 
                 final Message<Object> message = event.result();
                 final MultiMap headers = message.headers();
-                context.assertTrue(event.succeeded());
+                context.assertTrue( event.succeeded() );
                 context.assertEquals( "headerValue", headers.get( "headerName" ) );
                 context.assertEquals( 3, message.body() );
 
@@ -109,7 +111,7 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 
                 final Message<Object> message = event.result();
                 final MultiMap headers = message.headers();
-                context.assertTrue(event.succeeded());
+                context.assertTrue( event.succeeded() );
                 context.assertEquals( "headerValue", headers.get( "headerName" ) );
                 context.assertEquals( 4, message.body() );
 
@@ -119,7 +121,7 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 
                     final Message<Object> message2 = event.result();
                     final MultiMap headers2 = message2.headers();
-                    context.assertTrue(event2.succeeded());
+                    context.assertTrue( event2.succeeded() );
                     context.assertEquals( "headerValue", headers2.get( "headerName" ) );
                     context.assertEquals( 4, message2.body() );
 
@@ -143,7 +145,7 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 
                 final Message<Object> message = event.result();
                 final MultiMap headers = message.headers();
-                context.assertTrue(event.succeeded());
+                context.assertTrue( event.succeeded() );
                 context.assertEquals( "headerValue", headers.get( "headerName" ) );
                 final JsonObject bodyObject = new JsonObject( message.body().toString() );
                 context.assertEquals( dto.getInteger( "integer" ), bodyObject.getInteger( "integer" ) );

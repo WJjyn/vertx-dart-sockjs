@@ -16,7 +16,6 @@ typedef void ConsumerJS(MessageFailureJS failure, VertxMessageJS msg);
 /// Handler for incoming reply events
 typedef void ReplyHandlerJS(dynamic body, String headers, ConsumerJS replyConsumer);
 
-
 /// Error with that the [EventBusJS.onerror]
 @JS()
 @anonymous
@@ -107,7 +106,6 @@ class EventBusJS {
 
   /// Set a custom handler that get called when an error has occurred like ""
   external set onerror(ErrorHandlerJS onErrorHandler);
-
 
   /// Enables ping on the event bus instance.
   external void pingEnabled(bool enable);

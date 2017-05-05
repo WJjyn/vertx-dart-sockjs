@@ -35,7 +35,7 @@ public abstract class AbstractClientServerTest
      *
      * @throws IOException
      */
-    public void prepareClientsideTest (String testName) throws IOException
+    public void prepareClientsideTest ( String testName ) throws IOException
     {
         try ( InputStream is = getClass().getResourceAsStream( "/test-config.properties" ) )
         {
@@ -63,12 +63,13 @@ public abstract class AbstractClientServerTest
 
     /**
      * Starts client side test. Use Vert.x unit api to determine test result for the client.
-     *
+     * <p>
      * Notice, the given {@link Async} will be called exactly one time through this method.
      *
      * @param context
      * @param async
      * @param testFile
+     *
      * @throws Exception
      */
     public Future startTestClient ( TestContext context, Async async, String testFile ) throws Exception
@@ -81,7 +82,7 @@ public abstract class AbstractClientServerTest
             try
             {
                 final int processResult = new ProcessBuilder( "pub", "run", "test", "-p", "phantomjs", testFile ).directory(
-//                final int processResult = new ProcessBuilder( "pub", "run", "test", "-p", "dartium", "--pause-after-load", testFile ).directory(
+                        //                final int processResult = new ProcessBuilder( "pub", "run", "test", "-p", "dartium", "--pause-after-load", testFile ).directory(
                         workDirPath.toFile() ).redirectError( errout.toFile() ).redirectOutput( stdout.toFile() ).start().waitFor();
                 out.complete( processResult == 0 && checkLogForTestSuccess() ? 0 : 1 );
             }

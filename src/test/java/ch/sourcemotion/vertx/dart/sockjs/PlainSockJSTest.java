@@ -42,7 +42,7 @@ public class PlainSockJSTest extends AbstractClientServerTest
     @Before
     public void setUp () throws Exception
     {
-        prepareClientsideTest("sockjs");
+        prepareClientsideTest( "sockjs" );
 
         vertx = serverRule.vertx();
         httpServer = vertx.createHttpServer( new HttpServerOptions().setHost( "localhost" ).setPort( 9000 ) );
