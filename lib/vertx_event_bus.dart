@@ -23,6 +23,17 @@ void _DefaultConsumerExecutionDelegate(Function f) {
   f();
 }
 
+/// Errors they can happen on the [EventBus]
+enum EventBusError { ACCESS_DENIED, AUTH_ERROR, NOT_LOGGED_IN }
+final Map<String, EventBusError> _errorTypes = {
+  "access_denied": EventBusError.ACCESS_DENIED,
+  "auth_error": EventBusError.AUTH_ERROR,
+  "not_logged_in": EventBusError.NOT_LOGGED_IN
+};
+
+/// Handler signature that can be registered to get called on [EventBusError] on the event bus.
+typedef void ErrorHandler(EventBusError error);
+
 /// Entry point to the connection API with the Vert.x SockJS event bus bridge:
 ///
 /// http://vertx.io/docs/vertx-web/java/#_sockjs_event_bus_bridge.
@@ -69,7 +80,18 @@ class EventBus {
   void onClose(void callback()) {
     _eb.onclose = allowInterop((_) {
       _log.finest("Vertx event bus closed");
-      callback();
+      consumerExecDelegate(() {
+        callback();
+      });
+    });
+  }
+
+  /// Register that [ErrorHandler] to get called when an event bus error happens.
+  void onError(ErrorHandler handler) {
+    _eb.onerror = allowInterop((ErrorJS errorNative) {
+      consumerExecDelegate(() {
+        handler(_errorTypes[errorNative.body]);
+      });
     });
   }
 

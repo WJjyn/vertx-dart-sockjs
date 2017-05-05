@@ -1,5 +1,6 @@
 package ch.sourcemotion.vertx.dart;
 
+import io.vertx.core.Future;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
@@ -70,8 +71,10 @@ public abstract class AbstractClientServerTest
      * @param testFile
      * @throws Exception
      */
-    public void startTestClient ( TestContext context, Async async, String testFile ) throws Exception
+    public Future startTestClient ( TestContext context, Async async, String testFile ) throws Exception
     {
+        final Future future = Future.future();
+
         final CompletableFuture<Integer> out = new CompletableFuture<>();
         new Thread( () ->
         {
@@ -102,8 +105,10 @@ public abstract class AbstractClientServerTest
             finally
             {
                 async.countDown();
+                future.complete();
             }
         } ).start();
+        return future;
     }
 
 

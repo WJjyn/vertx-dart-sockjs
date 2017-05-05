@@ -7,11 +7,25 @@ import 'package:js/js.dart';
 import 'package:vertx_dart_sockjs/sockjs.dart';
 import 'package:vertx_dart_sockjs/src/sockjs_base.dart';
 
+/// Native handler of event bus errors.
+typedef void ErrorHandlerJS(ErrorJS error);
+
 /// Consumer for incoming events
 typedef void ConsumerJS(MessageFailureJS failure, VertxMessageJS msg);
 
 /// Handler for incoming reply events
 typedef void ReplyHandlerJS(dynamic body, String headers, ConsumerJS replyConsumer);
+
+
+/// Error with that the [EventBusJS.onerror]
+@JS()
+@anonymous
+class ErrorJS {
+  external factory ErrorJS({String type, String body});
+
+  external String get type;
+  external String get body;
+}
 
 /// Failure state for server site of a sent event
 @JS()
@@ -24,12 +38,11 @@ class MessageFailureJS {
   external String get message;
 }
 
-@JS('Object.keys')
-external List<String> getKeys(jsObject);
-
+/// Returns the parsed javascript object for that [String]
 @JS("JSON.parse")
 external dynamic parse(String obj);
 
+/// Returns the [String] representation of the given object.
 @JS("JSON.stringify")
 external String stringify(dynamic obj);
 
@@ -48,6 +61,7 @@ class VertxMessageJS {
   /// Body / Payload of this event
   external dynamic get body;
 
+  /// Message headers
   external dynamic get headers;
 
   /// Type of this event
@@ -90,6 +104,10 @@ class EventBusJS {
 
   /// Set the callback which will get called when the event bus got closed.
   external set onclose(Function onCloseCallback);
+
+  /// Set a custom handler that get called when an error has occurred like ""
+  external set onerror(ErrorHandlerJS onErrorHandler);
+
 
   /// Enables ping on the event bus instance.
   external void pingEnabled(bool enable);

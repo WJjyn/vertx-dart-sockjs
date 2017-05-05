@@ -25,8 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Test for events they are initial send from server side
- *
  * @author Michel Werren
  */
 @RunWith( VertxUnitRunner.class )
@@ -69,6 +67,11 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
     }
 
 
+    /**
+     * Test event bus for events they are initiated from the server side.
+     * @param context
+     * @throws Exception
+     */
     @Test( timeout = 60000 )
     public void serverMotivatedEventTest ( TestContext context ) throws Exception
     {
@@ -78,7 +81,7 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 
         startTestClient( context, async, "test/server_to_client_event_test.dart" );
 
-        vertx.setPeriodic( 10000, id ->
+        vertx.setTimer( 10000, id ->
         {
             LOGGER.info( "Start test" );
 
@@ -154,8 +157,6 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
 
                 async.countDown();
             } );
-
-            vertx.cancelTimer( id );
         } );
     }
 }

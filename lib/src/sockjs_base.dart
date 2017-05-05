@@ -20,6 +20,7 @@ class SockJSOptions {
   external factory SockJSOptions({bool debug, bool devel, List<String> protocols_whitelist});
 }
 
+/// SockJS javascript object representation
 @JS("SockJS")
 class SockJSImpl {
   external SockJSImpl(String url, dynamic reserved, SockJSOptions options);
