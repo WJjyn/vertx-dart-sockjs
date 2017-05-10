@@ -118,7 +118,7 @@ typedef void ConsumerExecutionDelegate(Function f);
 
 ```dart
 void delegate(Function f) {
-  ngZone.runGuarded<R>(() => f());
+  ngZone.runGuarded(() => f());
 }
 ```
 
