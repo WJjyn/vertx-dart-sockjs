@@ -80,6 +80,42 @@ main() async {
     expect(msg.body, equals(3));
     expect(msg.headers, equals(headers));
 
+    result = await eventBus.sendWithReplyAsync("withReply", body: "3", headers: headers);
+
+    _log.info("reply for withReply received");
+    expect(result.failed, isFalse);
+    expect(result.success, isTrue);
+    msg = result.message;
+    expect(msg.body, equals("3"));
+    expect(msg.headers, equals(headers));
+
+    result = await eventBus.sendWithReplyAsync("withReply", body: 3.3, headers: headers);
+
+    _log.info("reply for withReply received");
+    expect(result.failed, isFalse);
+    expect(result.success, isTrue);
+    msg = result.message;
+    expect(msg.body, equals(3.3));
+    expect(msg.headers, equals(headers));
+
+    result = await eventBus.sendWithReplyAsync("withReply", body: "true", headers: headers);
+
+    _log.info("reply for withReply received");
+    expect(result.failed, isFalse);
+    expect(result.success, isTrue);
+    msg = result.message;
+    expect(msg.body, equals("true"));
+    expect(msg.headers, equals(headers));
+
+    result = await eventBus.sendWithReplyAsync("withReply", body: true, headers: headers);
+
+    _log.info("reply for withReply received");
+    expect(result.failed, isFalse);
+    expect(result.success, isTrue);
+    msg = result.message;
+    expect(msg.body, equals(true));
+    expect(msg.headers, equals(headers));
+
     done.complete(true);
 
     await done.future;

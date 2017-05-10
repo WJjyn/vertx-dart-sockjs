@@ -73,7 +73,7 @@ public class ClientMotivatedEventbusBridgeTest extends AbstractClientServerTest
     {
         vertx.exceptionHandler( context.exceptionHandler() );
 
-        final Async async = context.async( 9 );
+        final Async async = context.async( 13 );
 
         // 1 time executed
         vertx.eventBus().consumer( "simpleSend", message ->
@@ -94,7 +94,7 @@ public class ClientMotivatedEventbusBridgeTest extends AbstractClientServerTest
             async.countDown();
         } );
 
-        // 3 times executed
+        // 7 times executed
         vertx.eventBus().consumer( "withReply", message ->
         {
             LOGGER.info( "withReply -> Body: {} of type {}", message.body(),
