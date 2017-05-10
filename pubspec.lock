@@ -6,7 +6,7 @@ packages:
       name: analyzer
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.29.10"
+    version: "0.30.0"
   args:
     description:
       name: args
@@ -24,7 +24,7 @@ packages:
       name: barback
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.15.2+10"
+    version: "0.15.2+11"
   boolean_selector:
     description:
       name: boolean_selector
@@ -67,6 +67,12 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.13.5"
+  front_end:
+    description:
+      name: front_end
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.0-alpha.4"
   glob:
     description:
       name: glob
@@ -115,6 +121,12 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.19+1"
+  kernel:
+    description:
+      name: kernel
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.0-alpha.1"
   logging:
     description:
       name: logging
@@ -144,7 +156,7 @@ packages:
       name: package_config
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.0"
+    version: "1.0.1"
   package_resolver:
     description:
       name: package_resolver
@@ -252,7 +264,7 @@ packages:
       name: test
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.12.20+10"
+    version: "0.12.20+12"
   typed_data:
     description:
       name: typed_data

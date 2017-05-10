@@ -1,5 +1,5 @@
 import 'package:logging/logging.dart';
-import 'package:vertx_dart_sockjs/event_bus_consumer.dart';
+import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
 
 final Logger _log = new Logger("Consumer");
 

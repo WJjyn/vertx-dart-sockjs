@@ -3,10 +3,10 @@ import 'dart:js';
 
 import 'package:logging/logging.dart';
 import 'package:vertx_dart_sockjs/event_bus_codec.dart';
-import 'package:vertx_dart_sockjs/event_bus_consumer.dart';
 import 'package:vertx_dart_sockjs/event_bus_header.dart';
 import 'package:vertx_dart_sockjs/src/consumer_base.dart';
 import 'package:vertx_dart_sockjs/src/vertx_event_bus_base.dart';
+import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
 
 /// Exception which get thrown when the user tries to reply on a message, that not expect a reply.
 class NoReplyExpectException implements Exception {

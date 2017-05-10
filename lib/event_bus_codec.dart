@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'dart:js';
 import 'package:logging/logging.dart';
 import 'package:vertx_dart_sockjs/src/vertx_event_bus_base.dart';
 

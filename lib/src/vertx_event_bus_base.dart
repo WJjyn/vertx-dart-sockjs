@@ -80,6 +80,14 @@ class EventBusJSOptions extends SockJSOptions {
   external factory EventBusJSOptions({bool debug, bool devel, List<String> protocols_whitelist, int pingInterval});
 }
 
+/// Possible connection states of the [EventBusJS]
+class EventBusState{
+  static const int kConnecting = 0;
+  static const int kOpen = 1;
+  static const int kClosing = 2;
+  static const int kClosed = 3;
+}
+
 @JS("EventBus")
 class EventBusJS {
   /// Constructor
@@ -106,6 +114,9 @@ class EventBusJS {
 
   /// Set a custom handler that get called when an error has occurred like ""
   external set onerror(ErrorHandlerJS onErrorHandler);
+
+  /// Return get current connection state of the event bus.
+  external int get state;
 
   /// Enables ping on the event bus instance.
   external void pingEnabled(bool enable);

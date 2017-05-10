@@ -103,21 +103,3 @@ main() async {
     await control.waitUntilDone();
   });
 }
-
-class TestControl {
-  final Completer completer = new Completer();
-
-  final int expectVisits;
-
-  int visits = 0;
-
-  TestControl(this.expectVisits);
-
-  visited() {
-    if (++visits >= expectVisits) {
-      completer.complete();
-    }
-  }
-
-  Future waitUntilDone() => completer.future;
-}
