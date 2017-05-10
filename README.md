@@ -14,10 +14,8 @@ There 1 or 2 JS file necessary. The one for SockJS and at the other hand Vert.x 
 
 ```html
 <head>
-    ...
     <script defer src="packages/vertx_dart_sockjs/src/js/sockjs-0.3.4.min.js"></script>
-    <script defer src="packages/vertx_dart_sockjs/src/js/vertx-eventbus-3.4.1.js"></script>
-    ...
+    <script defer src="packages/vertx_dart_sockjs/src/js/vertx-eventbus-3.4.1.min.js"></script>
 </head>
 ```
 

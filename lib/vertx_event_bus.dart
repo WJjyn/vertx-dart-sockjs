@@ -59,7 +59,7 @@ class EventBusOptions {
 ///
 /// Based on SockJS version 0.3.4
 ///
-/// This facet provides a global flag [autoConvertMessageBodies]. When set to [true], the body of any event (incoming or sent) will get
+/// This facade provides a global flag [autoConvertMessageBodies]. When set to [true], the body of any event (incoming or sent) will get
 /// converted. For incoming event this is from the wire [String] to a [Map]. When its activated and an non [String] body is provided for
 /// send, it get converted to a [String].
 /// This behavior can be overridden also on each send / reply call. When the conversion has failed on send / reply,
@@ -303,7 +303,7 @@ class _ReconnectHandler {
   startToReconnect() async {
     // Avoid multiple parallel executions
     if (reconnectTimer == null) {
-      _log.info("Start reconnect to $url");
+      _log.info("Start reconnect to $url with interval ${options.autoReconnectInterval}");
       // Close existing SockJS channel properly
       facade._eb.close();
 

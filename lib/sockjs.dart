@@ -18,7 +18,7 @@ typedef void OnMessageCallback(SockJsMessageEvent event);
 /// State of the SockJS connection
 enum SockJSConnectionState { CONNECTING, OPEN, CLOSING, CLOSED }
 
-/// Typesafe facet [SockJSImpl]
+/// Typesafe facade [SockJSImpl]
 class SockJS {
   SockJSImpl _sockJS;
 

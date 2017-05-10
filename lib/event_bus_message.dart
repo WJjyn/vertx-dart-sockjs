@@ -49,7 +49,7 @@ class AsyncResult {
   int get failureCode => failed ? _failure.failureCode : null;
 }
 
-/// Message facet over the original javascript message for conversion tasks and other benefits.
+/// Message facade over the original javascript message for conversion tasks and other benefits.
 class VertxMessage<T> {
   static final Logger _log = new Logger("VertxMessage");
 
