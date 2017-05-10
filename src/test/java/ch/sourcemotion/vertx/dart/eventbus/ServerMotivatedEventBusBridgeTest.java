@@ -129,6 +129,14 @@ public class ServerMotivatedEventBusBridgeTest extends AbstractClientServerTest
                 } );
             } );
 
+            vertx.eventBus().send( "string", "string" );
+            vertx.eventBus().send( "integer", 1 );
+            vertx.eventBus().send( "integerString", "1" );
+            vertx.eventBus().send( "double", 1.1 );
+            vertx.eventBus().send( "doubleString", "1.1" );
+            vertx.eventBus().send( "boolean", true );
+            vertx.eventBus().send( "booleanString", "true" );
+
             JsonObject dto = new JsonObject();
             dto.put( "integer", 100 );
             dto.put( "integerString", "100" );

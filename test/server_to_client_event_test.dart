@@ -1,10 +1,11 @@
 import 'dart:async';
+
 @TestOn("browser || phantomjs")
 @Timeout(const Duration(seconds: 10))
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
-
 import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
+
 import 'test_util.dart';
 
 final Logger _log = new Logger("ServerToClientTest");
@@ -21,7 +22,7 @@ main() async {
   });
 
   test("Server motivated event test", () async {
-    TestControl control = new TestControl(5);
+    TestControl control = new TestControl(12);
 
     eventBus.consumer("simpleSend", (VertxMessage msg) {
       _log.info("Event on address simpleSendConsumer received");
@@ -33,6 +34,48 @@ main() async {
     });
 
     _log.info("simpleSendConsumer registered");
+
+    eventBus.consumer("string", (VertxMessage<int> msg) {
+      _log.info("string received");
+      expect(msg.body, "string");
+      control.visited();
+    });
+
+    eventBus.consumer("integer", (VertxMessage<int> msg) {
+      _log.info("integer received");
+      expect(msg.body, 1);
+      control.visited();
+    });
+
+    eventBus.consumer("integerString", (VertxMessage<int> msg) {
+      _log.info("integerString received");
+      expect(msg.body, "1");
+      control.visited();
+    });
+
+    eventBus.consumer("double", (VertxMessage<int> msg) {
+      _log.info("double received");
+      expect(msg.body, 1.1);
+      control.visited();
+    });
+
+    eventBus.consumer("doubleString", (VertxMessage<int> msg) {
+      _log.info("doubleString received");
+      expect(msg.body, "1.1");
+      control.visited();
+    });
+
+    eventBus.consumer("boolean", (VertxMessage<int> msg) {
+      _log.info("boolean received");
+      expect(msg.body, true);
+      control.visited();
+    });
+
+    eventBus.consumer("booleanString", (VertxMessage<int> msg) {
+      _log.info("booleanString received");
+      expect(msg.body, "true");
+      control.visited();
+    });
 
     eventBus.consumer("publish", (VertxMessage msg) {
       _log.info("Event on address publish received");
