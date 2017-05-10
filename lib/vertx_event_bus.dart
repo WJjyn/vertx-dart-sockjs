@@ -217,7 +217,7 @@ class EventBus {
     return new ConsumerReference(consumer, address, this, decoder);
   }
 
-  void _unregisterConsumer(ConsumerReference consumerRef){
+  void _unregisterConsumer(ConsumerReference consumerRef) {
     _log.finest("Vertx consumer unregistered on ${consumerRef.address}");
     _eb.unregisterHandler(consumerRef.address);
     _ConsumerRegistry.instance.removeConsumer(consumerRef);
@@ -361,7 +361,7 @@ class _ReconnectHandler {
       }
     } catch (e, st) {
       _log.severe("Error during reattach handlers and consumers. Reconnecting not possible", e, st);
-    }finally{
+    } finally {
       reconnectTimer = null;
     }
   }

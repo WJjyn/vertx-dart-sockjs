@@ -1,5 +1,5 @@
 @TestOn("browser || phantomjs")
-@Timeout(const Duration(seconds:10))
+@Timeout(const Duration(seconds: 10))
 import 'dart:async';
 
 import 'package:logging/logging.dart';

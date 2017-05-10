@@ -21,17 +21,20 @@ main() async {
     TestControl testControl = new TestControl(6);
 
     try {
-      EventBusOptions options = new EventBusOptions(reopenedCallback: (){
-        // Must be called after reconnect
-        _log.info("reopenedCallback executed");
-        testControl.visited();
-      }, autoReconnect: true, autoReconnectInterval: 2000);
+      EventBusOptions options = new EventBusOptions(
+          reopenedCallback: () {
+            // Must be called after reconnect
+            _log.info("reopenedCallback executed");
+            testControl.visited();
+          },
+          autoReconnect: true,
+          autoReconnectInterval: 2000);
       EventBus eventBus = await EventBus.create(eventbusAddress, consumerExecDelegate: Zone.current.runGuarded, options: options);
 
       expect(eventBus.open, isTrue);
 
       // Should get called twice
-      eventBus.onClose((){
+      eventBus.onClose(() {
         _log.info("onClose executed");
         expect(eventBus.open, isFalse);
         testControl.visited();

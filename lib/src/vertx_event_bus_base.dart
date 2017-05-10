@@ -79,7 +79,7 @@ class EventBusJSOptions extends SockJSOptions {
 }
 
 /// Possible connection states of the [EventBusJS]
-class EventBusState{
+class EventBusState {
   static const int kConnecting = 0;
   static const int kOpen = 1;
   static const int kClosing = 2;
