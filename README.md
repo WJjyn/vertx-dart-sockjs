@@ -114,6 +114,15 @@ To ensure that any of them are called within the correct zone or other context, 
 typedef void ConsumerExecutionDelegate(Function f);
 ```
 
+##### AngularDart Example
+
+```dart
+void delegate(Function f) {
+  ngZone.runGuarded<R>(() => f());
+}
+```
+
+
 This delegator can be applied as parameter to the event bus create method.
 
 #### Reconnect
