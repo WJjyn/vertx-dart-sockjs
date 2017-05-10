@@ -1,10 +1,8 @@
 @TestOn("browser || phantomjs")
 @Timeout(const Duration(seconds: 10))
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:logging/logging.dart';
-import 'package:quiver/core.dart';
 import 'package:test/test.dart';
 import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
 

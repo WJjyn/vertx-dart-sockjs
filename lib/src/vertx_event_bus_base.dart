@@ -1,8 +1,6 @@
 @JS()
 library vertx.native;
 
-import 'dart:js';
-
 import 'package:js/js.dart';
 import 'package:vertx_dart_sockjs/sockjs.dart';
 import 'package:vertx_dart_sockjs/src/sockjs_base.dart';

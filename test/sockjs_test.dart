@@ -28,7 +28,7 @@ main() async {
   test("Ping pong SockJS test", () async {
     Zone z = Zone.current;
 
-    final Function asyncCallback = expectAsync((int bodyValue) {
+    final Function asyncCallback = expectAsync1((int bodyValue) {
       _logger.info("Call async callback");
 
       z.runBinary(expect, 1, bodyValue);

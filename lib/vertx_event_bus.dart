@@ -4,24 +4,20 @@ import 'dart:js';
 
 import 'package:logging/logging.dart';
 import 'package:vertx_dart_sockjs/event_bus_codec.dart';
-import 'package:vertx_dart_sockjs/event_bus_header.dart';
 import 'package:vertx_dart_sockjs/event_bus_message.dart';
-import 'package:vertx_dart_sockjs/src/consumer_base.dart';
+import 'package:vertx_dart_sockjs/src/event_bus_consumer_base.dart';
+import 'package:vertx_dart_sockjs/src/event_bus_header_base.dart';
 import 'package:vertx_dart_sockjs/src/sockjs_base.dart';
 import 'package:vertx_dart_sockjs/src/vertx_event_bus_base.dart';
 
+export 'package:vertx_dart_sockjs/src/vertx_event_bus_base.dart';
 export 'package:vertx_dart_sockjs/event_bus_codec.dart';
-export 'package:vertx_dart_sockjs/event_bus_header.dart';
 export 'package:vertx_dart_sockjs/event_bus_message.dart';
 export 'package:vertx_dart_sockjs/sockjs.dart';
-
-export 'src/consumer_base.dart';
 export 'src/sockjs_base.dart';
 
 /// Internal, base implementation.
-void _DefaultConsumerExecutionDelegate(Function f) {
-  f();
-}
+void _DefaultConsumerExecutionDelegate(Function f) => f();
 
 /// Type of callbacks they called when the event bus gets closed or reopened
 typedef EventBusClosedOrReopenedCallback();

@@ -3,8 +3,8 @@ import 'dart:js';
 
 import 'package:logging/logging.dart';
 import 'package:vertx_dart_sockjs/event_bus_codec.dart';
-import 'package:vertx_dart_sockjs/event_bus_header.dart';
-import 'package:vertx_dart_sockjs/src/consumer_base.dart';
+import 'package:vertx_dart_sockjs/src/event_bus_consumer_base.dart';
+import 'package:vertx_dart_sockjs/src/event_bus_header_base.dart';
 import 'package:vertx_dart_sockjs/src/vertx_event_bus_base.dart';
 import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
 

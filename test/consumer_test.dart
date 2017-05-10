@@ -3,7 +3,7 @@
 @Tags(const ["client_only"])
 import 'package:test/test.dart';
 
-import 'package:vertx_dart_sockjs/vertx_event_bus.dart';
+import 'package:vertx_dart_sockjs/src/event_bus_consumer_base.dart';
 import 'test_util.dart';
 
 void main() {
