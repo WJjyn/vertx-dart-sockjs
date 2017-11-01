@@ -1,8 +1,10 @@
 # Changelog
 
-## 0.3.4
-
-- Initial version, corresponds to SockJS 0.3.4 / Vert.x 3.3.2
+## 3.5.0
+- Vertx 3.5.0
+- Upgrade all Dart dependencies
+- Logger version constraint
+- Increase minimum Dart SDK to 1.24.2 (next release would be probably for 2.0)
 
 ## 3.4.1
 
@@ -13,3 +15,8 @@
 - Small encoder / decoder API
 - Improve tests 
 - More complete readme
+
+## 0.3.4
+
+- Initial version, corresponds to SockJS 0.3.4 / Vert.x 3.3.2
+

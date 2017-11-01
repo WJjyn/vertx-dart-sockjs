@@ -9,9 +9,9 @@ environment:
 
 dependencies:
   js: ^0.6.1
-  logging:
+  logging: ^0.11.3
 
 dev_dependencies:
   test: ^0.12.20
   quiver: ^0.25.0
-  json_object:
+  json_object: ^1.0.19
