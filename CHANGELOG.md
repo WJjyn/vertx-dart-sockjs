@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.5.0
+
 - Vertx 3.5.0
 - Upgrade all Dart dependencies
 - Logger version constraint
